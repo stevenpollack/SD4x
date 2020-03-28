@@ -13,9 +13,10 @@ var displayVal = function(x) {
 // make sure calculator display is empty on page-load
 $(document).ready(clearDisplay);
 
+// global variables
 var trailingDigitRegexp = /[+*\-\/]0*\.?\d+$/; // op0*(.|)dddddd
 var inputString = '';
-var histArray = [];
+var histArray = []; // this isn't used.
 var displayString = '';
 var lastOperation = '';
 var calcResult = '';
@@ -32,7 +33,7 @@ $('button[value]').click(function(){
     inputString += $(this).val(); 
     displayString += $(this).val();
     displayVal(displayString);
-    console.log(`digitButton: ${inputString}`);
+    // console.log(`digitButton: ${inputString}`);
 });
 
 // have C clear input string and display
@@ -69,14 +70,14 @@ var opDict = {
 */
 var opButtonHandler = function(buttonId) {
     return function() {
-        if (inputString == '' && calcResult == '') {
+        if (inputString === '' && calcResult === '') {
             // do nothing since this would be syntactically wrong 
             return false;
         }
 
         // if a calculation has just finished & an operation is pressed, the result
         // should start the input string
-        if (displayString == '' && calcResult != '') {
+        if (displayString === '' && calcResult !== '') {
             inputString = calcResult;
         }
 
@@ -94,7 +95,7 @@ var opButtonHandler = function(buttonId) {
         // to prepare it for future input -- the number buttons will modify
         // display string upon click.
         displayString = '';
-        console.log(`opButton: ${inputString}`);
+        // console.log(`opButton: ${inputString}`);
     }
 };
 
@@ -124,7 +125,7 @@ var calcCaptureAndResetStrings = function(evalString, throwError=false) {
     if (calcResult == undefined || !Number.isFinite(calcResult)) {
         calcResult = '';
     }
-    
+
     return calcResult;
 }
 
@@ -132,7 +133,8 @@ var calcCaptureAndResetStrings = function(evalString, throwError=false) {
 /*
     The "=" button has some rules:
     1. successive clicks of "=" repeat the last operation. For example "1+2===" = "1+2+2+2"
-    2. we can't click "=" on a malformed string like "88+=". This should yield an error
+    2. we can't click "=" on a malformed string like "88+=". This should yield an error but
+    instead we've been told to just "ignore" the operation.
 */
 $('#equalsButton').click(function(){
     // if both inputString & calcResult are empty, we're dealing with a blank
@@ -150,24 +152,25 @@ $('#equalsButton').click(function(){
 
     // "=" is hit for the first time.
     if (trailingDigitRegexp.test(inputString)) {
-        console.log(inputString);
+        // console.log(inputString);
         // capture last operation for potential "replay" of "=" (see next case):
         lastOperation = trailingDigitRegexp.exec(inputString)[0];
         calcResult = calcCaptureAndResetStrings(inputString);
    
     } else if (displayString == '' && calcResult != '') {
         // "=" has just been hit an Nth time.
-        console.log("case2 " + inputString);
+        // console.log("case2 " + inputString);
         inputString = calcResult + lastOperation;
         calcResult = calcCaptureAndResetStrings(inputString);
         
     } else if (/\D$/.test(inputString)) { 
-        // string has trailing op -> this is a syntax error
-        calcCaptureAndResetStrings('', throwError=true);
+        // string has trailing op -> ~this is a syntax error~ ignore
+        // calcCaptureAndResetStrings('', throwError=true);
+        return false;
     } else { 
         // string is non-empty but has no op: display it as the identity
         // and clear lastOperation
-        console.log("case3: " + inputString);
+        // console.log("case3: " + inputString);
         calcCaptureAndResetStrings(inputString);
         lastOperation = '';
     }
