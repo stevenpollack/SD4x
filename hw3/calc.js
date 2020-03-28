@@ -23,15 +23,23 @@ var calcResult = '';
 // the only buttons with value attributes are digits
 // they modify the input string, and nothing else
 $('button[value]').click(function(){
-    inputString += $(this).val();
-    displayString += $(this).val(); 
+/*    If the display string has been reset, but calcResult isn't empty,
+      the user has finished a string of calculations.
+      If we push a button number button after this point, the input string
+      should no longer hold calcResult, but the new number.
+      The logic for ^^ has been pushed to the op-button handlers.
+ */
+    inputString += $(this).val(); 
+    displayString += $(this).val();
     displayVal(displayString);
+    console.log(`digitButton: ${inputString}`);
 });
 
 // have C clear input string and display
 $('#clearButton').click(function(){
     inputString = '';
     displayString = '';
+    calcResult = '';
     displayVal('');
 });
 
@@ -41,13 +49,35 @@ var opDict = {
     multiplyButton: "*",
     divideButton: "/"
 };
-// need to fix bug with + when starting fresh
 
 // create a function factory to handle +-*/ button events
+/*  the op Button handler's rely on the idea that `inputString` is
+    reset upon "=". This is an indication that a string of operations
+    is to be "exhausted" and the user wants to start a new string.
+    If a calculation is returned and a user *immediately* presses an operation
+    the assumption is that the new string will begin with the freshly returned
+    `calcResult`. Otherwise, the cases we need to pay attention to are:
+    
+    * inputString & calcResult are both empty, which symbolizes as clear calculator.
+    In this case, adding an op to the inputString would make eval() break, and makes
+    no sense.
+    * the user has pushed two successive operations (e.g. + and then -). In this case,
+    the "-" operator will replace the "+" in inputString.
+    * the user has pushed an operator after a string of numbers. This is the primary
+    anticipated case, and should have the operator appended to the end of inputString.
+
+*/
 var opButtonHandler = function(buttonId) {
     return function() {
-        if (inputString == '') { // do nothing since this would be syntactically wrong
+        if (inputString == '' && calcResult == '') {
+            // do nothing since this would be syntactically wrong 
             return false;
+        }
+
+        // if a calculation has just finished & an operation is pressed, the result
+        // should start the input string
+        if (displayString == '' && calcResult != '') {
+            inputString = calcResult;
         }
 
         var op = opDict[buttonId]
@@ -64,25 +94,46 @@ var opButtonHandler = function(buttonId) {
         // to prepare it for future input -- the number buttons will modify
         // display string upon click.
         displayString = '';
+        console.log(`opButton: ${inputString}`);
     }
 };
 
+// assign the correct button handlers according to the button Id attr
 for (var buttonId in opDict) {
     $('#' + buttonId).click(opButtonHandler(buttonId));
 };
 
-var calcCaptureAndResetStrings = function(evalString) {
+// this is a helper function that is heavily used in the "=" button handler.
+// the purpose is to update the DOM with calculation results/history before resetting
+// inputString and displayString. In the instance where a mal-formed input string
+// is attempted to be computed, an error flag is set and calcResult is reset.
+var calcCaptureAndResetStrings = function(evalString, throwError=false) {
     calcResult = eval(evalString);
-    displayVal(calcResult);
     $('ol.history').prepend(`<li>${inputString} = ${calcResult}</li>`);
     histArray.push(inputString);
-    // set inputString to calcResult so that we can chain future calculations
-    inputString = calcResult;
+
+    if (throwError) {
+        displayVal("SYNTAX ERROR: " + inputString);
+    } else {
+        displayVal(calcResult);
+    }
+    
+    inputString = '';
     displayString = '';
+    // in the instance of an infinite or undefined value, reset calcResult
+    if (calcResult == undefined || !Number.isFinite(calcResult)) {
+        calcResult = '';
+    }
+    
     return calcResult;
 }
 
 // have "=" evaluate inputString
+/*
+    The "=" button has some rules:
+    1. successive clicks of "=" repeat the last operation. For example "1+2===" = "1+2+2+2"
+    2. we can't click "=" on a malformed string like "88+=". This should yield an error
+*/
 $('#equalsButton').click(function(){
     // if both inputString & calcResult are empty, we're dealing with a blank
     // calculator and there's nothing to "="
@@ -106,89 +157,21 @@ $('#equalsButton').click(function(){
    
     } else if (displayString == '' && calcResult != '') {
         // "=" has just been hit an Nth time.
+        console.log("case2 " + inputString);
         inputString = calcResult + lastOperation;
         calcResult = calcCaptureAndResetStrings(inputString);
-
+        
     } else if (/\D$/.test(inputString)) { 
         // string has trailing op -> this is a syntax error
-        displayVal("SYNTAX ERROR: " + inputString);
+        calcCaptureAndResetStrings('', throwError=true);
     } else { 
         // string is non-empty but has no op: display it as the identity
+        // and clear lastOperation
+        console.log("case3: " + inputString);
         calcCaptureAndResetStrings(inputString);
+        lastOperation = '';
     }
 
     return false;
 
 });
-
-
-// capture button presses
-$('button').click(function() {
-    return false; // short circuit
-    var buttonValue = $(this).val();
-
-    if (buttonValue) { // only numbers have truthy val's
-        inputString += buttonValue;
-        displayValue += buttonValue;
-        $('#display').val(displayValue); 
-        return false;
-    }
-    
-    var buttonId = $(this).attr('id');
-
-    if (buttonId == 'equalsButton') {
-        // memory: extract the last "...(+|-|*|/)digit" in the inputStack
-        lastOperation = /\D\d*$/.exec(inputString);
-        if (lastOperation != null) {
-            lastOperation = lastOperation[0];
-        } else {
-            lastOperation = '';
-        }
-        // display the evaluation of our arithmetic operations
-        $('#display').val(eval(inputString));
-        // clear display for next operation
-        displayValue = '';
-        return false;
-
-    } else if (buttonId == 'clearButton') {
-        displayValue = '';
-        $('#display').val(displayValue);
-        inputString = displayValue;
-        return false; // break early
-    }
-
-    /*
-    1. Need to make sure the display clears between inputed numbers.
-    E.g. 2 > * > CLEAR > 11 > = > CLEAR > 22
-    2. Need to make sure back-to-back ops clober.
-    E.g. 2 > + > - > 1 === 2 > - > 1
-    */
-    // two back-to-back ops clobber:
-    var operand;
-    switch (buttonId) {
-        case 'addButton': operand = '+'; break;
-        case 'subtractButton': operand = '-'; break;
-        case 'multiplyButton': operand = '*'; break;
-        case 'divideButton': operand = '/'; break;
-    }
-
-    // an operand has been punched so clear the display value
-    displayValue = '';
-
-    // either inputStack has a trailing digit or operand
-    if (/\d$/.test(inputString)) {
-        // trailing digit: collapse current expression
-        //inputStack = eval(inputStack);
-        inputString += operand;
-    } else {
-        // replace trailing operands: (\D is non-digit symbol)
-        inputString = inputString.replace(/\D$/, operand);
-    }
-
-
-    // debugging:
-    $('#output').html(inputString);
-});
-
-// need to handle collapsing of string
-// when people do x + =...
