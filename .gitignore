@@ -1,2 +1,5 @@
 
-hw3/hw3.pdf
+*/*.pdf
+*/node_modules/
+*/.vscode/
+*/package-lock.json
