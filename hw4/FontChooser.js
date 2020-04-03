@@ -1,13 +1,6 @@
 class FontChooser extends React.Component {
   constructor (props) {
 	super(props)
-
-	// have to bind like below to access `this` correctly.
-	this.handleTextDoubleClick = this.handleTextDoubleClick(this.handleTextDoubleClick)
-	this.handleTextClick = this.handleTextClick.bind(this.handleTextClick)
-	this.handleDecreaseButton = this.handleDecreaseButton.bind(this.handleDecreaseButton)
-	this.handleIncreaseButton = this.handleIncreaseButton.bind(this.handleIncreaseButton)
-	this.handleCheckBox = this.handleCheckBox.bind(this.handleCheckBox)
 	
 	var [minSize, maxSize, fontSize] = [this.props.min, this.props.max, this.props.size] // is there a clean way to do this?
 	// ERROR HANDLING:
@@ -23,30 +16,68 @@ class FontChooser extends React.Component {
 	
 
     this.state = {
+		timeoutID: [],
 		minSize: minSize,
 		maxSize: maxSize,
 		hideForm: true,
 		fontColor: 'black',
 		fontStyle: 'normal',
 		fontSize: fontSize,
-		boldFont: this.props.bold ? 'bold' : 'normal' 
+		fontWeight: this.props.bold ? 'bold' : 'normal' 
 	 }
+  }
+
+  componentDidMount = () => {
+	// have to bind like below to access `this` correctly.
+	console.log("binding handlers")
+	this.handleTextClick = this.handleTextClick.bind(this.handleTextClick)
+	this.handleDecreaseButton = this.handleDecreaseButton.bind(this.handleDecreaseButton)
+	this.handleIncreaseButton = this.handleIncreaseButton.bind(this.handleIncreaseButton)
+	this.handleCheckBox = this.handleCheckBox.bind(this.handleCheckBox)
+	this.handleTextDoubleClick = this.handleTextDoubleClick.bind(this.handleTextDoubleClick)
   }
 
   // use the fxn form of setState() to make sure that previous state is used...
   handleTextClick = (event) => {
-	  // var timeoutID = setTimeout(fxn, delay)
-	  // clearTimeout(timeoutID)
-	  const dblClickDelay = 300 //ms
+	  console.log('handleTextClick')
+	  const dblClickDelay = 200 //ms
 	  var timeoutID = setTimeout( () => {
-		      this.setState((state) => ({
-				  hideForm: !state.hideForm
-				}))
+		      this.setState((state) => {
+				  let tID = state.timeoutID
+				  console.log('popping tID: ' + tID.pop())
+				  return {timeoutID: tID, hideForm: !state.hideForm}
+			  })
 			}, dblClickDelay)
-	  this.setState( (state) => ({timeoutID: timeoutID}))
+		console.log(timeoutID)
+	  this.setState( (state) => {
+		let tID = state.timeoutID
+		tID.push(timeoutID)
+		return {timeoutID: tID}
+	  })
+	  1
   }
 
+  handleTextDoubleClick = (event) => {
+	// clear the single click event timeout call
+	if (this.state.timeoutID != []) {
+		let tIDs = this.state.timeoutID
+		tIDs.forEach(clearTimeout)
+		console.log('clearing tIDs: ' + tIDs)
+		this.setState({timeoutID: []})
+	}
+  console.log('hi')
+	this.setState((state) => {
+		return {
+			fontStyle: 'normal',
+			fontSize: this.props.size,
+			boldFont: this.props.bold ? 'bold' : 'normal',
+			fontColor: 'black'
+		}
+	})
+}
+
   handleIncreaseButton = (event) => {
+
 	this.setState( state => {
 		if (state.fontSize == state.maxSize) {
 			return {} // do nothing and break
@@ -56,7 +87,7 @@ class FontChooser extends React.Component {
 		if (newSize == state.maxSize) {
 			return {
 				fontSize: newSize,
-				fontColor: 'green',
+				fontColor: 'red',
 				fontStyle: 'italic'
 				}
 		} else {
@@ -70,65 +101,56 @@ class FontChooser extends React.Component {
 	}
 
   handleDecreaseButton = (event) => {
-	  var textSize = this.state.fontSize
-	  this.setState( (state) => {
-		  if (state.fontSize > state.minSize) {
-			  return { 
-				  fontSize: state.fontSize-1,
-				  fontStyle: 'normal',
-				  fontColor: 'black'
-				}
-		  } else if (state.fontSize == state.minSize) {
-			  return {
-				  fontWeight: 'bold',
-				  fontStyle: 'italic'
-			  }
+	this.setState( state => {
+		if (state.fontSize == state.minSize) {
+			return {} // do nothing and break
+		}
 
-		  }
-		})
-	  console.log(textSize)
+		var newSize = state.fontSize-1
+		if (newSize == state.minSize) {
+			return {
+				fontSize: newSize,
+				fontColor: 'red',
+				fontStyle: 'italic'
+				}
+		} else {
+			return {
+				fontStyle: 'normal',
+				fontSize: newSize,
+				fontColor: 'black'
+			}
+		} 
+	})
   }
 
   handleCheckBox = (event) => {
 	  console.log(event.target)
 	  const checkBox = event.target
 	  console.log(checkBox.checked)
-	  this.setState( (state) => ({ boldFont: state.boldFont === 'normal'? 'bold' : 'normal'}) )
-
+	  this.setState( (state) => ({
+		   boldFont: state.boldFont === 'normal'? 'bold' : 'normal'})
+		   )
   }
 
-  handleTextDoubleClick = (event) => {
-	  // clear the single click event timeout call
-	  if (this.state.timeoutID) {
-		  clearTimeout(this.state.timeoutID)
-	  }
-
-	  this.setState((state) => {
-		  return {
-			  fontSize: this.props.size,
-			  fontWeight: this.props.bold ? 'bold' : 'normal',
-			  color: 'black'
-		  }
-	  })
-  }
-
-// implement for min
   render () {
     return (
       <div>
         <span id='textSpan'
+		 onClick={this.handleTextClick}
 		 onDoubleClick={this.handleTextDoubleClick}
 		 style={{
 			 fontStyle: this.state.fontStyle,
 			 color: this.state.fontColor,
 			 fontSize: this.state.fontSize,
-			 fontWeight: this.state.boldFont}}
-		  onClick={this.handleTextClick}>
+			 fontWeight: this.state.fontWeight}}>
 		  	{this.props.text}
 		</span>
       	<br/>
-		  <label for="boldCheckbox" hidden={this.state.hideForm}>
-		  	<input type='checkbox' id='boldCheckbox' onChange={this.handleCheckBox} hidden={this.state.hideForm} />
+		  <label hidden={this.state.hideForm}>
+		  	<input type='checkbox'
+			   id='boldCheckbox'
+			   checked={this.state.fontWeight == 'bold' ? true : false}
+			   onChange={this.handleCheckBox}/>
 		  	Bold
 		  </label>
 
