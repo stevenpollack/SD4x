@@ -2,7 +2,17 @@ class FontChooser extends React.Component {
   constructor (props) {
 	super(props)
 	
-	var [minSize, maxSize, fontSize] = [this.props.min, this.props.max, this.props.size] // is there a clean way to do this?
+	// bind all handlers
+	this.handleTextClick = this.handleTextClick.bind(this.handleTextClick)
+	this.handleDecreaseButton = this.handleDecreaseButton.bind(this.handleDecreaseButton)
+	this.handleIncreaseButton = this.handleIncreaseButton.bind(this.handleIncreaseButton)
+	this.handleCheckBox = this.handleCheckBox.bind(this.handleCheckBox)
+	this.handleTextDoubleClick = this.handleTextDoubleClick.bind(this.handleTextDoubleClick)
+
+	let [minSize, maxSize, fontSize] = [this.props.min, this.props.max, this.props.size] // is there a clean way to do this?
+	
+	let fontWeight = this.props.bold ? 'bold' : 'normal'
+	
 	// ERROR HANDLING:
 	minSize = minSize <= 0 ? 1 : minSize
 	maxSize = maxSize < minSize ? minSize : maxSize
@@ -23,19 +33,10 @@ class FontChooser extends React.Component {
 		fontColor: 'black',
 		fontStyle: 'normal',
 		fontSize: fontSize,
-		fontWeight: this.props.bold ? 'bold' : 'normal' 
+		fontWeight: fontWeight
 	 }
   }
 
-  componentDidMount = () => {
-	// have to bind like below to access `this` correctly.
-	console.log("binding handlers")
-	this.handleTextClick = this.handleTextClick.bind(this.handleTextClick)
-	this.handleDecreaseButton = this.handleDecreaseButton.bind(this.handleDecreaseButton)
-	this.handleIncreaseButton = this.handleIncreaseButton.bind(this.handleIncreaseButton)
-	this.handleCheckBox = this.handleCheckBox.bind(this.handleCheckBox)
-	this.handleTextDoubleClick = this.handleTextDoubleClick.bind(this.handleTextDoubleClick)
-  }
 
   // use the fxn form of setState() to make sure that previous state is used...
   handleTextClick = (event) => {
@@ -54,7 +55,6 @@ class FontChooser extends React.Component {
 		tID.push(timeoutID)
 		return {timeoutID: tID}
 	  })
-	  1
   }
 
   handleTextDoubleClick = (event) => {
