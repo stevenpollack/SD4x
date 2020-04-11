@@ -1,33 +1,31 @@
-import React, { Component } from 'react';
-import List from './List.js';
-const uuidv4 = require('uuid');
+import React, { Component } from 'react'
+import List from './List.js'
 
 class Lists extends Component {
-
-  render() {
+  render () {
     // If there are no lists, display a relevant message
-    if(this.props.lists.length === 0) {
+    if (Object.keys(this.props.lists).length === 0) {
       return (
-        <div id="listsDiv" className="List">
+        <div id='listsDiv' className='List'>
           <h2>Add new lists to get started!</h2>
         </div>
-      );
+      )
     }
 
     // Otherwise, for each list, create a div
-    var items = this.props.items;
-    var lists = this.props.lists;
-    var addItem = this.props.addItem;
+    const lists = this.props.lists
+    // unpack list items
+
     return (
-      <div key={uuidv4()}>
-      {lists.map(function(listName) {
-        return (
-          <List name={listName} items={items[listName]} addItem={addItem.bind(this)} key={uuidv4()} />
-        )
-      })}
+      <div>{
+        Object.values(lists).map(
+          ({ name, id, items }) => {
+            return (<List name={name} key={id} items={items} onAddItem={this.props.onAddItem} onItemClick={this.props.onItemClick} />)
+          })
+      }
       </div>
-    );
+    )
   }
 }
 
-export default Lists;
+export default Lists

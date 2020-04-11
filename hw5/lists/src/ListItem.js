@@ -1,28 +1,14 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 
 class ListItem extends Component {
-
-    constructor(props) {
-	super(props);
-	this.state = { color: 'black' };
-    }
-
-    handleClick() {
-	// Implement this function!
-    }
-
-  render() {
-    var item = this.props.item;
-    var name = item.name;
-
+  render () {
+    const fontColor = this.props.selected ? 'red' : 'black'
+    const itemValue = { listName: this.props.listName, id: this.props.id }
     return (
-	    <span onClick={this.handleClick.bind(this)} style={{color: this.state.color}}>
-        <strong>{name}</strong>
+      <span onClick={() => this.props.onItemClick(itemValue)} style={{ color: fontColor }}>
+        <strong>{this.props.value}</strong>
       </span>
-    );
-
+    )
   }
-
 }
-export default ListItem;
-
+export default ListItem

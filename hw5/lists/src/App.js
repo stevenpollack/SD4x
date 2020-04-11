@@ -1,16 +1,19 @@
-import React, { Component } from 'react';
-import Lists from './Lists.js';
-import AddList from './AddList.js';
-import './App.css';
+import React, { Component } from 'react'
+import Lists from './Lists.js'
+import AddList from './AddList.js'
+import './App.css'
+import {v4 as uuidv4} from 'uuid'
 
 class App extends Component {
-
-  constructor() {
-    super();
+  constructor (props) {
+    super(props)
     this.state = {
-	lists: [], // this holds the name of each list
-	items: {} // this property names of this object are the names of the lists; their values are arrays of the items in each list
-    };
+      lists: {}
+    }
+
+    this.handleAddItem = this.handleAddItem.bind(this)
+    this.handleItemClick = this.handleItemClick.bind(this)
+    this.handleAddList = this.handleAddList.bind(this)
   }
 
   /**
@@ -19,36 +22,62 @@ class App extends Component {
    * array and then adding a new property in the "items" object that has the same name
    * as the value put into the "lists" array. It should then re-render this App component.
    */
-  handleAddList(s) {
-      // Implement this function!
+  handleAddList (newListName) {
+    // AddList.state has .value which is the value of the <input/>
+    this.setState(state => {
+      let lists = state.lists
+      lists[newListName] = {
+        name: newListName,
+        id: uuidv4(),
+        items: []
+      }
+      return {  lists  }
+    })
   }
 
   /**
    * This function takes the state of an AddItem component as its parameter
-   * and updates the state of this App component by adding a new value to the 
+   * and updates the state of this App component by adding a new value to the
    * appropriate array in the "items" property of the state. Keep in mind that
    * the property names of "items" are the names of each list, which is mapped
-   * to an array of the items in that list. After updating the "items" part of 
+   * to an array of the items in that list. After updating the "items" part of
    * the state, this function  should then re-render this App component.
    */
-  handleAddItem(s) {
-      // Implement this function!
+  handleAddItem (listName, newItem) {
+    this.setState(state => {
+      let lists = state.lists
+      lists[listName].items.push(newItem)
+      //console.log(lists)
+      return { lists }
+    })   
+  }
+
+  handleItemClick ({listName, id}) {
+    console.log(this)
+    this.setState(state => {
+      const listItems = state.lists[listName].items
+      const itemIndex = listItems.findIndex( item => item.id === id )
+      const itemSelected = listItems[itemIndex].selected
+      listItems[itemIndex].selected = !itemSelected
+
+      return {lists: state.lists}
+    })
   }
 
   /**
    * Renders the component.
    */
-  render() {
+  render () {
+    console.log(this)
     return (
-      <div className="App">
-        <AddList addList={this.handleAddList.bind(this)} />
-        <div id="listsDiv" className="List">
-          <Lists lists={this.state.lists} items={this.state.items} addItem={this.handleAddItem.bind(this)} />
+      <div className='App'>
+        <AddList addList={this.handleAddList} />
+        <div id='listsDiv' className='List'>
+          <Lists lists={this.state.lists} onItemClick={this.handleItemClick} onAddItem={this.handleAddItem} />
         </div>
       </div>
-    );
+    )
   }
-
 }
 
-export default App;
+export default App
